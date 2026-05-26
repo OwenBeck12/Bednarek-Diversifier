@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bednarek Diversifier</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ─── Loading overlay ───────────────────────────────────────────────────── -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <p class="loading-title">Loading market data</p>
+    <p class="loading-sub">Parsing 5 years of closing prices&hellip;</p>
+  </div>
+</div>
+
+<!-- ─── Header ───────────────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-brand">
+    <svg class="brand-icon" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <rect width="28" height="28" rx="7" fill="url(#brandGrad)"/>
+      <defs>
+        <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0071e3"/>
+          <stop offset="100%" stop-color="#34aadc"/>
+        </linearGradient>
+      </defs>
+      <!-- Inefficient portion of frontier (dimmed) -->
+      <path d="M 20 23 C 20 19, 8 19, 8 14" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.45"/>
+      <!-- Efficient frontier (bright upper curve) -->
+      <path d="M 8 14 C 8 9, 20 9, 20 5" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <!-- Minimum variance portfolio dot -->
+      <circle cx="8" cy="14" r="2.2" fill="white"/>
+      <!-- Optimal portfolio dot on efficient frontier -->
+      <circle cx="17" cy="7.5" r="1.6" fill="white" opacity="0.85"/>
+    </svg>
+    <div>
+      <span class="brand-name">Bednarek Diversifier</span>
+      <span class="brand-tagline">Find your lowest-correlation stocks</span>
+      <span class="brand-updated" id="lastUpdated"></span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button id="themeBtn" class="icon-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <!-- injected by JS -->
+    </button>
+  </div>
+</header>
+
+<!-- ─── App layout ────────────────────────────────────────────────────────── -->
+<div class="app-layout">
+
+  <!-- Left sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="search-wrapper">
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="18" y2="18"/>
+            </svg>
+          </span>
+          <input
+            id="stockSearch"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Search by ticker or name&hellip;"
+          />
+        </div>
+        <p class="search-meta" id="stockMeta"></p>
+      </div>
+    </div>
+    <ul class="stock-list" id="stockList" role="listbox" aria-label="Stocks"></ul>
+  </aside>
+
+  <!-- Right main panel -->
+  <main class="main-panel">
+
+    <!-- Welcome state (shown before any stock is clicked) -->
+    <div id="welcomeState" class="welcome-state">
+      <div class="welcome-icon" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none">
+          <rect width="48" height="48" rx="13" fill="url(#wGrad)"/>
+          <defs>
+            <linearGradient id="wGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#0071e3"/>
+              <stop offset="100%" stop-color="#34aadc"/>
+            </linearGradient>
+          </defs>
+          <!-- Inefficient portion (dimmed) -->
+          <path d="M 35 41 C 35 33, 13 33, 13 24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.4"/>
+          <!-- Efficient frontier (bright) -->
+          <path d="M 13 24 C 13 15, 35 15, 35 7" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <!-- Minimum variance portfolio -->
+          <circle cx="13" cy="24" r="3.5" fill="white"/>
+          <!-- Optimal portfolio on efficient frontier -->
+          <circle cx="29" cy="11" r="2.8" fill="white" opacity="0.85"/>
+        </svg>
+      </div>
+      <h1 class="welcome-title">Select a stock to explore</h1>
+      <p class="welcome-body">
+        Click any stock in the list to see every other stock ranked by correlation —
+        from the most diversifying (lowest&nbsp;ρ) to the most correlated (highest&nbsp;ρ).
+      </p>
+      <div class="legend">
+        <p class="legend-title">Correlation key</p>
+        <div class="legend-items">
+          <div class="legend-item"><span class="legend-dot" style="background:#166534;color:#dcfce7;border:2px solid #14532d">ρ &lt; −0.20</span><span class="legend-label">Strongly diversifying</span></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#16a34a;color:#ffffff">−0.20 to 0</span><span class="legend-label">Diversifying</span></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#bbf7d0;color:#166534">0 to 0.30</span><span class="legend-label">Low correlation</span></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f97316;color:#ffffff">0.30 to 0.70</span><span class="legend-label">Moderate–high correlation</span></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#991b1b;color:#fee2e2;border:2px solid #7f1d1d">ρ &gt; 0.70</span><span class="legend-label">Very high correlation</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Correlation panel (shown after a stock is selected) -->
+    <div id="corrView" class="corr-view hidden">
+
+      <!-- Selected stock header -->
+      <div class="corr-header">
+        <div class="corr-stock-info">
+          <div class="corr-ticker-row">
+            <h2 id="cTicker" class="corr-ticker"></h2>
+            <span id="cSector" class="sector-tag"></span>
+          </div>
+          <p id="cName" class="corr-name"></p>
+          <div class="corr-stats">
+            <div class="stat-block">
+              <span class="stat-label">5-Year Ann. Return</span>
+              <span id="cReturn" class="stat-value"></span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-block">
+              <span class="stat-label">Volatility (Ann.)</span>
+              <span id="cVol" class="stat-value neutral"></span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-block">
+              <span class="stat-label">Stocks ranked</span>
+              <span id="cN" class="stat-value neutral"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Correlation search bar -->
+      <div class="corr-toolbar">
+        <div class="search-box small">
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="18" y2="18"/>
+            </svg>
+          </span>
+          <input
+            id="corrSearch"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Filter by ticker or name&hellip;"
+          />
+        </div>
+        <span id="corrMeta" class="corr-meta"></span>
+      </div>
+
+      <!-- Correlation list -->
+      <div class="corr-scroll">
+        <ul id="corrList" class="corr-list" role="listbox"></ul>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
