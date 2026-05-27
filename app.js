@@ -180,7 +180,6 @@ function renderCorrList(stockIdx) {
       `<div class="corr-body">` +
         `<div class="corr-row1">` +
           `<span class="corr-item-ticker">${s.ticker}</span>` +
-          `<span class="corr-item-dash">—</span>` +
           `<span class="corr-item-name">${esc(s.name)}</span>` +
         `</div>` +
         `<div class="corr-item-sector">${esc(s.sector)}</div>` +
@@ -217,7 +216,7 @@ function filterCorrList() {
 // ─────────────────────────────────────────────────────────────────────────────
 function corrStyle(rho) {
   if (rho <= -0.20) return { bg: "#166534", fg: "#dcfce7", border: "#14532d" };
-  if (rho <= 0)     return { bg: "#16a34a", fg: "#ffffff" };
+  if (rho <= 0)     return { bg: "#86efac", fg: "#14532d" };
   if (rho <= 0.30)  return { bg: "#bbf7d0", fg: "#166534" };
   if (rho <= 0.70)  return { bg: "#f97316", fg: "#ffffff" };
                     return { bg: "#991b1b", fg: "#fee2e2", border: "#7f1d1d" };
