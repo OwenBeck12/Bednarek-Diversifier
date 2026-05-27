@@ -281,7 +281,7 @@ def main():
     print("STEP 4 - Computing returns and correlation matrix")
     returns = np.log(prices / prices.shift(1)).dropna()
 
-    valid_tickers = sorted(returns.columns.tolist())
+    valid_tickers = sorted(returns.columns.tolist(), key=lambda t: mcaps.get(t, 0), reverse=True)
     returns = returns[valid_tickers]
     n = len(valid_tickers)
 
@@ -302,6 +302,7 @@ def main():
             "sector":        sectors.get(t, "Unknown"),
             "annual_return": round(float(annual_ret.get(t, 0.0)), 4),
             "volatility":    round(float(annual_vol.get(t, 0.0)), 4),
+            "market_cap":    round(float(mcaps.get(t, 0.0)), 0),
         })
     print(f"  {len(stocks)} stocks assembled.\n")
 
