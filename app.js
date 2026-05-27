@@ -144,7 +144,6 @@ function renderCorrHeader(idx) {
   retEl.className   = "stat-value " + (ret >= 0 ? "positive" : "negative");
 
   $("cVol").textContent = (s.volatility * 100).toFixed(1) + "%";
-  $("cN").textContent   = (D.n - 1).toLocaleString();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
